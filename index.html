@@ -1,1 +1,956 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>TwCCCC (CAD) + CAC Reclassify + Lipid Target 工具</title>
+
+  <!-- Mermaid (for flowcharts) -->
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+
+  <style>
+    :root{
+      --bg: #f7f1e3;          /* light beige */
+      --card: #fffaf0;        /* warm off-white */
+      --ink: #1f2937;         /* slate-ish */
+      --muted: #6b7280;
+      --line: rgba(31,41,55,.14);
+      --shadow: 0 12px 30px rgba(31,41,55,.08);
+      --accent: #2f6f6c;
+      --accent2: #8a6a2b;
+      --danger: #a23c3c;
+      --warn: #b45309;
+      --ok: #166534;
+      --chip: rgba(47,111,108,.10);
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      --sans: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+      --radius: 18px;
+    }
+
+    *{ box-sizing: border-box; }
+    body{
+      margin:0;
+      font-family: var(--sans);
+      color: var(--ink);
+      background: radial-gradient(1200px 600px at 10% 0%, rgba(47,111,108,.08), transparent 60%),
+                  radial-gradient(900px 500px at 90% 20%, rgba(138,106,43,.09), transparent 55%),
+                  var(--bg);
+    }
+
+    header{
+      padding: 28px 18px 6px;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+    h1{
+      margin: 0 0 8px 0;
+      font-size: 22px;
+      letter-spacing: .2px;
+    }
+    .sub{
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.5;
+      margin-bottom: 18px;
+    }
+
+    main{
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 10px 18px 40px;
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+
+    .grid2{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:16px;
+    }
+    @media (max-width: 980px){
+      .grid2{ grid-template-columns: 1fr; }
+    }
+
+    .card{
+      background: linear-gradient(180deg, rgba(255,255,255,.65), rgba(255,255,255,.35));
+      backdrop-filter: blur(6px);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 18px 18px 16px;
+    }
+
+    .title-row{
+      display:flex; align-items:center; justify-content:space-between; gap:10px;
+      margin-bottom: 10px;
+    }
+    h2{
+      margin:0;
+      font-size: 16px;
+    }
+    .tag{
+      font-size: 12px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: var(--chip);
+      color: var(--accent);
+      border: 1px solid rgba(47,111,108,.18);
+      white-space: nowrap;
+    }
+
+    .row{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 10px;
+    }
+    @media (max-width: 560px){
+      .row{ grid-template-columns: 1fr; }
+    }
+
+    label{
+      display:block;
+      font-size: 12px;
+      color: var(--muted);
+      margin: 0 0 6px;
+    }
+    input, select{
+      width: 100%;
+      padding: 10px 11px;
+      border: 1px solid rgba(31,41,55,.18);
+      border-radius: 12px;
+      background: rgba(255,255,255,.8);
+      font-size: 14px;
+      outline: none;
+    }
+    input:focus, select:focus{
+      border-color: rgba(47,111,108,.55);
+      box-shadow: 0 0 0 4px rgba(47,111,108,.12);
+    }
+
+    .btns{
+      display:flex; gap:10px; flex-wrap:wrap;
+      margin-top: 12px;
+    }
+    button{
+      border: 0;
+      padding: 10px 12px;
+      border-radius: 12px;
+      cursor:pointer;
+      font-weight: 600;
+      font-size: 14px;
+    }
+    .primary{
+      background: var(--accent);
+      color: white;
+    }
+    .ghost{
+      background: rgba(255,255,255,.65);
+      border: 1px solid rgba(31,41,55,.18);
+      color: var(--ink);
+    }
+
+    .divider{
+      height:1px;
+      background: var(--line);
+      margin: 14px 0;
+    }
+
+    .result{
+      display:grid;
+      grid-template-columns: 1.1fr .9fr;
+      gap: 14px;
+      margin-top: 10px;
+    }
+    @media (max-width: 900px){
+      .result{ grid-template-columns: 1fr; }
+    }
+
+    .box{
+      border: 1px solid rgba(31,41,55,.14);
+      border-radius: 16px;
+      padding: 12px 12px 10px;
+      background: rgba(255,255,255,.65);
+    }
+
+    .kpi{
+      display:flex; align-items:flex-end; gap:10px; flex-wrap:wrap;
+    }
+    .kpi .big{
+      font-size: 26px;
+      font-weight: 800;
+      letter-spacing: .2px;
+    }
+    .kpi .small{
+      color: var(--muted);
+      font-size: 13px;
+      margin-bottom: 3px;
+    }
+
+    .badge{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      border: 1px solid rgba(31,41,55,.14);
+      background: rgba(255,255,255,.7);
+    }
+    .b-ok{ color: var(--ok); border-color: rgba(22,101,52,.25); background: rgba(22,101,52,.08); }
+    .b-warn{ color: var(--warn); border-color: rgba(180,83,9,.25); background: rgba(180,83,9,.08); }
+    .b-bad{ color: var(--danger); border-color: rgba(162,60,60,.25); background: rgba(162,60,60,.08); }
+    .b-mid{ color: var(--accent2); border-color: rgba(138,106,43,.25); background: rgba(138,106,43,.08); }
+
+    ul{ margin: 8px 0 0 18px; color: var(--ink); }
+    li{ margin: 4px 0; color: var(--ink); }
+    .muted{ color: var(--muted); font-size: 13px; line-height: 1.5; }
+
+    .note{
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.55;
+      margin-top: 10px;
+    }
+
+    .mermaid{
+      background: rgba(255,255,255,.6);
+      border: 1px solid rgba(31,41,55,.14);
+      border-radius: 16px;
+      padding: 10px;
+      overflow-x: auto;
+      font-family: var(--mono);
+    }
+
+    .pill-grid{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-top: 8px;
+    }
+    @media (max-width: 720px){
+      .pill-grid{ grid-template-columns: 1fr; }
+    }
+
+    .pill{
+      display:flex;
+      gap: 10px;
+      align-items:flex-start;
+      padding: 10px 10px;
+      border-radius: 14px;
+      border: 1px solid rgba(31,41,55,.14);
+      background: rgba(255,255,255,.65);
+    }
+    .pill input{ width: 18px; margin-top: 2px; }
+    .pill b{ font-size: 13px; }
+    .pill span{ display:block; font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+    footer{
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 0 18px 28px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.55;
+    }
+    code.inline{
+      font-family: var(--mono);
+      font-size: 12px;
+      padding: 2px 6px;
+      border-radius: 8px;
+      border: 1px solid rgba(31,41,55,.14);
+      background: rgba(255,255,255,.65);
+    }
+  </style>
+</head>
+
+<body>
+<header>
+  <h1>TwCCCC（CAD）+ CAC Reclassify + Lipid 目標（家醫門診版）</h1>
+  <div class="sub">
+    依 TSOC 2024 primary prevention guideline 的 TwCCCC 點數制（CAD）與分層，並提供 borderline / intermediate 時的 CAC 風險再分類，以及 LDL-C / non-HDL-C 治療目標計算（來源：TSOC 2024 Part I & II）。<br/>
+    <span class="muted">提醒：此工具用於臨床決策輔助與共享決策；最終處置仍需結合病人整體狀況與醫師判斷。</span>
+  </div>
+</header>
+
+<main>
+
+  <div class="grid2">
+    <!-- Card 1: TwCCCC Calculator -->
+    <section class="card" id="calcCard">
+      <div class="title-row">
+        <h2>① TwCCCC（CAD）10 年風險計算</h2>
+        <span class="tag">點數制 + 分層</span>
+      </div>
+
+      <div class="row">
+        <div>
+          <label>年齡（35–75+ 歲）</label>
+          <input id="age" type="number" min="18" max="120" placeholder="例：52" />
+        </div>
+        <div>
+          <label>性別</label>
+          <select id="sex">
+            <option value="male">男</option>
+            <option value="female">女</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="row">
+        <div>
+          <label>BMI（kg/m²）</label>
+          <input id="bmi" type="number" step="0.1" min="10" max="80" placeholder="例：24.2" />
+        </div>
+        <div>
+          <label>SBP 收縮壓（mmHg）</label>
+          <input id="sbp" type="number" min="60" max="260" placeholder="例：138" />
+        </div>
+      </div>
+
+      <div class="row">
+        <div>
+          <label>LDL-C（mg/dL）</label>
+          <input id="ldl" type="number" min="10" max="400" placeholder="例：142" />
+        </div>
+        <div>
+          <label>HDL-C（mg/dL）</label>
+          <input id="hdl" type="number" min="5" max="150" placeholder="例：46" />
+        </div>
+      </div>
+
+      <div class="btns">
+        <button class="primary" id="btnCalc">計算</button>
+        <button class="ghost" id="btnReset">清除</button>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="result">
+        <div class="box">
+          <div class="kpi">
+            <div>
+              <div class="small">TwCCCC Total Points（3–24）</div>
+              <div class="big" id="ptsOut">—</div>
+            </div>
+            <div>
+              <div class="small">10 年 CAD 風險（Estimated risk）</div>
+              <div class="big" id="riskOut">—</div>
+            </div>
+            <div id="tierBadgeWrap" style="margin-left:auto;"></div>
+          </div>
+
+          <div class="divider"></div>
+
+          <div class="muted" id="explainOut">
+            請先輸入資料並按「計算」。
+          </div>
+        </div>
+
+        <div class="box">
+          <div class="title-row" style="margin:0 0 6px 0;">
+            <h2 style="font-size:14px;margin:0;">TwCCCC 分層（CAD）</h2>
+            <span class="tag" style="font-size:11px;">依 10 年風險</span>
+          </div>
+          <ul class="muted" style="margin-top:6px;">
+            <li><b>Low：</b>1–14 分（&lt;3% / 10y）</li>
+            <li><b>Borderline：</b>15–17 分（3–7% / 10y）</li>
+            <li><b>Intermediate：</b>18–19 分（&gt;7–10% / 10y）</li>
+            <li><b>High：</b>20–24 分（&gt;10% / 10y）</li>
+          </ul>
+          <div class="note">
+            <b>適用：</b>35–75 歲未建立 ASCVD 者的 CAD 風險估計（TwCCCC CAD 點數制）。<br/>
+            若已確診 ASCVD（冠心症/中風/PAD 等），屬二級預防，建議直接走二級預防處置，不需用 TwCCCC 決定是否治療。
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Card 2: CAC Reclassify -->
+    <section class="card">
+      <div class="title-row">
+        <h2>② CAC（冠狀動脈鈣化）Reclassify（更像 guideline）</h2>
+        <span class="tag">Borderline / Intermediate 用</span>
+      </div>
+
+      <div class="muted">
+        CAC 可作為 <b>borderline（3–7%）或 intermediate（7–10%）</b> 風險者的「風險修飾/再分類」工具，用來協助是否啟動或加強預防治療（例如 statin）。<br/>
+        <b>高風險者通常不建議用 CAC 來決定要不要治療</b>（可能誤導）。請用共享決策方式討論。
+      </div>
+
+      <div class="row" style="margin-top:12px;">
+        <div>
+          <label>CAC score（Agatston；可留空）</label>
+          <input id="cac" type="number" min="0" max="9999" placeholder="例：0、35、120、520" />
+        </div>
+        <div>
+          <label>Reclassify 後風險分層</label>
+          <input id="tierAfterCac" type="text" readonly placeholder="先算 TwCCCC，再輸入 CAC" />
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="box">
+        <div class="title-row" style="margin:0 0 6px 0;">
+          <h2 style="font-size:14px;margin:0;">CAC 分段（常用）</h2>
+          <span class="tag" style="font-size:11px;">0 / 1–99 / 100–399 / ≥400</span>
+        </div>
+        <ul class="muted" style="margin-top:6px;">
+          <li><b>0：</b>非常低風險（“power of zero”）；在 borderline/intermediate 時可支持「延後/暫緩」升級治療的討論</li>
+          <li><b>1–99：</b>低風險（維持原分層，依整體風險與 LDL 目標討論）</li>
+          <li><b>100–399：</b>至少中度風險（可支持「上修」與啟動/加強 statin）</li>
+          <li><b>≥400：</b>高風險（強烈支持積極預防治療；是否使用 aspirin 需衡量出血風險並共享決策）</li>
+        </ul>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="box">
+        <h2 style="font-size:14px;margin:0 0 8px 0;">Flow chart（TwCCCC → CAC → 處置方向）</h2>
+        <div class="mermaid" id="mermaidCac">
+flowchart TD
+  A[TwCCCC 10y CAD risk 分層] --> B{Borderline 或 Intermediate?}
+  B -- 否 --> C[依原分層進行生活型態 + 藥物決策]
+  B -- 是 --> D[考慮做 CAC 作風險修飾]
+  D --> E{CAC score}
+  E -- "0" --> F[可下修一級風險<br/>偏向延後/暫緩升級藥物<br/>（共享決策）]
+  E -- "1-99" --> G[多半維持原分層<br/>依 LDL 目標討論 statin]
+  E -- "100-399" --> H[上修風險<br/>建議啟動/加強 statin]
+  E -- ">=400" --> I[視為高風險表現<br/>積極預防治療<br/>aspirin 需評估出血風險]
+        </div>
+        <div class="note">
+          這張圖是把「指引精神」做成門診好用的簡化版：borderline/intermediate 才用 CAC 幫忙上/下修；高風險者通常不靠 CAC 決定是否治療，而是直接做積極風險控制。
+        </div>
+      </div>
+
+    </section>
+  </div>
+
+  <!-- Card 3: Lipid Targets -->
+  <section class="card">
+    <div class="title-row">
+      <h2>③ Lipid 治療目標（LDL-C / non-HDL-C）</h2>
+      <span class="tag">2022 Taiwan lipid guideline（TSOC Part II 摘要）</span>
+    </div>
+
+    <div class="muted">
+      這一段是「算完風險後，你在家醫門診最常需要的下一步」：決定 <b>LDL-C 目標</b>，再選擇 statin 強度與是否加用 ezetimibe（無法達標或無法耐受 statin 時可考慮）。
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="box">
+      <h2 style="font-size:14px;margin:0 0 8px 0;">A) 高風險 profile（任一項即視為高風險，建議立即降脂）</h2>
+      <div class="pill-grid">
+        <label class="pill">
+          <input type="checkbox" id="lipDM" />
+          <div>
+            <b>糖尿病（DM）</b>
+            <span>primary prevention：屬高風險 profile</span>
+          </div>
+        </label>
+
+        <label class="pill">
+          <input type="checkbox" id="lipCKD" />
+          <div>
+            <b>非透析 CKD</b>
+            <span>primary prevention：屬高風險 profile</span>
+          </div>
+        </label>
+
+        <label class="pill">
+          <input type="checkbox" id="lipLDL190" />
+          <div>
+            <b>LDL-C ≥ 190 mg/dL</b>
+            <span>primary prevention：屬高風險 profile</span>
+          </div>
+        </label>
+      </div>
+
+      <div class="divider"></div>
+
+      <h2 style="font-size:14px;margin:0 0 8px 0;">B) 若無高風險 profile：計算「6 個 selected risk factors」數量</h2>
+      <div class="pill-grid">
+        <label class="pill">
+          <input type="checkbox" id="rfHTN" />
+          <div>
+            <b>Hypertension（高血壓）</b>
+            <span>selected risk factor 之一</span>
+          </div>
+        </label>
+
+        <label class="pill">
+          <input type="checkbox" id="rfFH" />
+          <div>
+            <b>Premature 家族史</b>
+            <span>男 &lt;55 或 女 &lt;65 的冠心病家族史</span>
+          </div>
+        </label>
+
+        <label class="pill">
+          <input type="checkbox" id="rfSmoke" />
+          <div>
+            <b>抽菸</b>
+            <span>selected risk factor 之一</span>
+          </div>
+        </label>
+
+        <label class="pill">
+          <input type="checkbox" id="rfMetS" />
+          <div>
+            <b>Metabolic syndrome（代謝症候群）</b>
+            <span>selected risk factor 之一</span>
+          </div>
+        </label>
+
+        <label class="pill">
+          <input type="checkbox" id="rfLowHDL" />
+          <div>
+            <b>Low HDL-C</b>
+            <span>男 &lt;40 或 女 &lt;50 mg/dL</span>
+          </div>
+        </label>
+
+        <div class="pill">
+          <input type="checkbox" id="rfOldAge" />
+          <div>
+            <b>Old age</b>
+            <span>男 ≥45 或 女 ≥55（可由年齡/性別自動判定，也可手動勾選）</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="btns">
+        <button class="primary" id="btnLipid">計算 LDL 目標</button>
+        <button class="ghost" id="btnLipidReset">清除</button>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="result">
+        <div class="box">
+          <div class="kpi">
+            <div>
+              <div class="small">LDL-C 目標</div>
+              <div class="big" id="ldlTargetOut">—</div>
+            </div>
+            <div>
+              <div class="small">non-HDL-C 目標（= LDL 目標 + 30）</div>
+              <div class="big" id="nonHdlTargetOut">—</div>
+            </div>
+            <div id="lipidBadgeWrap" style="margin-left:auto;"></div>
+          </div>
+
+          <div class="divider"></div>
+
+          <div class="muted" id="lipidExplain">
+            按「計算 LDL 目標」後顯示建議。
+          </div>
+        </div>
+
+        <div class="box">
+          <h2 style="font-size:14px;margin:0 0 8px 0;">Flow chart（降脂策略）</h2>
+          <div class="mermaid" id="mermaidLipid">
+flowchart TD
+  A[確認是否為 primary prevention] --> B{DM / 非透析 CKD / LDL>=190?}
+  B -- 是 --> C[立即啟動降脂治療<br/>LDL 目標: <100]
+  B -- 否 --> D[計算 6 個 selected risk factors 數量]
+  D --> E{risk factors = 2 / 1 / 0}
+  E -- "2" --> F[LDL 目標: <115]
+  E -- "1" --> G[LDL 目標: <130]
+  E -- "0" --> H[LDL 目標: <160]
+  C --> I[Statin 為第一線<br/>先中等強度→未達標再調高強度]
+  F --> I
+  G --> I
+  H --> I
+  I --> J{達到 LDL 目標?}
+  J -- 否 --> K[評估依從性/生活型態/交互作用<br/>可考慮加用 ezetimibe 或調整強度]
+  J -- 是 --> L[持續追蹤與定期再評估]
+          </div>
+
+          <div class="note">
+            TSOC Part II 重點：<b>statin 為第一線</b>，可先用中等強度再依達標狀況上調強度；<b>non-HDL</b> 可作為次要目標（比 LDL 目標高 30）。  
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <b>資料來源（你這份指引的關鍵點）：</b><br/>
+  1) TwCCCC（CAD）點數制與總分對照風險：TSOC 2024 primary prevention guideline Part I，Table 4（Total point 3–24）。:contentReference[oaicite:6]{index=6}<br/>
+  2) TwCCCC CAD 分層 cutpoints：1–14（&lt;3%）、15–17（3–7%）、18–19（&gt;7–10%）、20–24（&gt;10%）。:contentReference[oaicite:7]{index=7}<br/>
+  3) CAC 用於 borderline/intermediate 的風險再分類：TSOC Part I 提到可作上/下修以指引藥物介入。:contentReference[oaicite:8]{index=8}<br/>
+  4) CAC 分段（0 / 1–99 / 100–399 / ≥400）採台灣 CCS guideline 常用分類。:contentReference[oaicite:9]{index=9}<br/>
+  5) LDL/non-HDL 治療目標與 selected risk factors：TSOC Part II（引用 2022 Taiwan lipid guideline）。:contentReference[oaicite:10]{index=10}
+  <div style="margin-top:10px;">
+    <span class="muted">
+      免責聲明：此頁為教育與臨床決策輔助工具，不取代臨床醫師判斷；如病人屬二級預防/特殊族群或有藥物禁忌，請依完整指引與個別情境處置。
+    </span>
+  </div>
+</footer>
+
+<script>
+  // -----------------------------
+  // Mermaid init
+  // -----------------------------
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: "neutral",
+    securityLevel: "strict"
+  });
+
+  // -----------------------------
+  // TwCCCC CAD model (Table 4)
+  // Points mapping + totalPoints -> risk mapping
+  // Table shows total points 3..24; we apply a +3 offset to match the table.
+  // -----------------------------
+  const RISK_BY_TOTAL_POINTS = {
+    3: 0.001, 4: 0.001, 5: 0.002, 6: 0.003, 7: 0.003, 8: 0.005,
+    9: 0.006, 10: 0.008, 11: 0.011, 12: 0.014, 13: 0.019, 14: 0.025,
+    15: 0.033, 16: 0.044, 17: 0.058, 18: 0.076, 19: 0.099, 20: 0.129,
+    21: 0.168, 22: 0.216, 23: 0.276, 24: 0.349
+  };
+
+  function clamp(n, min, max){ return Math.max(min, Math.min(max, n)); }
+
+  function agePoints(age){
+    if (age >= 75) return 8;
+    if (age >= 70) return 7;
+    if (age >= 65) return 6;
+    if (age >= 60) return 5;
+    if (age >= 55) return 4;
+    if (age >= 50) return 3;
+    if (age >= 45) return 2;
+    if (age >= 40) return 1;
+    if (age >= 35) return 0;
+    // Below 35: not covered by TwCCCC table; we still return 0 but warn later.
+    return 0;
+  }
+
+  function sexPoints(sex){ return sex === "male" ? 3 : 0; }
+
+  function bmiPoints(bmi){
+    if (bmi >= 26) return 2;
+    if (bmi >= 22) return 1;
+    return 0;
+  }
+
+  function sbpPoints(sbp){
+    if (sbp >= 160) return 4;
+    if (sbp >= 150) return 3;
+    if (sbp >= 130) return 2;
+    if (sbp >= 110) return 1;
+    return 0;
+  }
+
+  function ldlPoints(ldl){
+    if (ldl >= 150) return 2;
+    if (ldl >= 90) return 1;
+    return 0;
+  }
+
+  function hdlPoints(hdl){
+    if (hdl >= 80) return 0;
+    if (hdl >= 70) return 1;
+    if (hdl >= 60) return 2;
+    if (hdl >= 40) return 3;
+    if (hdl >= 30) return 4;
+    return 5;
+  }
+
+  function riskTierFromTotalPoints(totalPts){
+    if (totalPts <= 14) return "low";
+    if (totalPts <= 17) return "borderline";
+    if (totalPts <= 19) return "intermediate";
+    return "high";
+  }
+
+  function badgeHTML(tier){
+    if (tier === "low") return `<span class="badge b-ok">Low</span>`;
+    if (tier === "borderline") return `<span class="badge b-mid">Borderline</span>`;
+    if (tier === "intermediate") return `<span class="badge b-warn">Intermediate</span>`;
+    if (tier === "high") return `<span class="badge b-bad">High</span>`;
+    return ``;
+  }
+
+  function tierNameZH(tier){
+    return ({
+      low: "Low（低風險）",
+      borderline: "Borderline（邊緣風險）",
+      intermediate: "Intermediate（中度風險）",
+      high: "High（高風險）"
+    })[tier] || "—";
+  }
+
+  function toPercent(x){
+    if (typeof x !== "number") return "—";
+    return (x * 100).toFixed(1) + "%";
+  }
+
+  function explainTwcccc(tier){
+    switch(tier){
+      case "low":
+        return `以生活型態（飲食、運動、體重、戒菸、睡眠壓力）為主；藥物依個別指標與共病（例如 LDL/血壓/糖尿病）決定。`;
+      case "borderline":
+        return `建議以生活型態為主並進行共享決策；若是否啟動 statin 不確定，可考慮 CAC 作風險修飾（見右側）。`;
+      case "intermediate":
+        return `多數情況會更傾向啟動藥物風險控制（尤其降脂）；若仍猶豫，可用 CAC 進一步上/下修風險。`;
+      case "high":
+        return `屬高風險：通常不需要靠 CAC 決定是否治療；建議積極控制 LDL/血壓/生活型態，並依臨床情境考慮轉介心臟科共同照護。`;
+      default:
+        return `—`;
+    }
+  }
+
+  // -----------------------------
+  // CAC reclassify (guideline-like simplified logic)
+  // Only apply if baseline tier is borderline or intermediate.
+  // CAC categories: 0 / 1-99 / 100-399 / >=400
+  // -----------------------------
+  function reclassifyWithCAC(baseTier, cac){
+    if (!Number.isFinite(cac)) return baseTier;
+    if (!(baseTier === "borderline" || baseTier === "intermediate")) return baseTier;
+
+    if (cac === 0){
+      // down one tier
+      return baseTier === "intermediate" ? "borderline" : "low";
+    }
+    if (cac >= 1 && cac <= 99){
+      return baseTier; // keep
+    }
+    if (cac >= 100 && cac <= 399){
+      return "high"; // up
+    }
+    if (cac >= 400){
+      return "high"; // still high; we will add stronger text in explanation
+    }
+    return baseTier;
+  }
+
+  function cacExtraNote(baseTier, cac){
+    if (!Number.isFinite(cac)) return "";
+    if (!(baseTier === "borderline" || baseTier === "intermediate")) return "";
+
+    if (cac === 0){
+      return "CAC=0：可支持下修風險與延後/暫緩升級藥物的共享決策（仍需看 LDL 目標與其他共病）。";
+    }
+    if (cac >= 1 && cac <= 99){
+      return "CAC 1–99：多半維持原分層；依 LDL 目標與病人偏好討論是否啟動/維持 statin。";
+    }
+    if (cac >= 100 && cac <= 399){
+      return "CAC ≥100：支持上修風險與啟動/加強預防性治療（特別是降脂）。";
+    }
+    if (cac >= 400){
+      return "CAC ≥400：高鈣化負荷，強烈支持積極預防治療；是否使用 aspirin 需評估出血風險並共享決策。";
+    }
+    return "";
+  }
+
+  // -----------------------------
+  // Lipid targets (TSOC Part II summary)
+  // High-risk profile: DM, non-dialysis CKD, LDL>=190 -> LDL target <100
+  // Else: 6 selected risk factors count -> LDL target:
+  //   2 -> <115, 1 -> <130, 0 -> <160
+  // non-HDL target = LDL target + 30
+  // -----------------------------
+  function getLDLTargets(){
+    const dm = document.getElementById("lipDM").checked;
+    const ckd = document.getElementById("lipCKD").checked;
+    const ldl190 = document.getElementById("lipLDL190").checked;
+
+    // Selected risk factors
+    const htn = document.getElementById("rfHTN").checked;
+    const oldAge = document.getElementById("rfOldAge").checked;
+    const fh = document.getElementById("rfFH").checked;
+    const lowHdl = document.getElementById("rfLowHDL").checked;
+    const smoke = document.getElementById("rfSmoke").checked;
+    const mets = document.getElementById("rfMetS").checked;
+
+    if (dm || ckd || ldl190){
+      return { ldlTarget: 100, nonHdlTarget: 130, group: "highProfile", rfCount: null };
+    }
+
+    const rfCount = [htn, oldAge, fh, lowHdl, smoke, mets].filter(Boolean).length;
+
+    if (rfCount >= 2){
+      return { ldlTarget: 115, nonHdlTarget: 145, group: "rf2", rfCount };
+    }
+    if (rfCount === 1){
+      return { ldlTarget: 130, nonHdlTarget: 160, group: "rf1", rfCount };
+    }
+    return { ldlTarget: 160, nonHdlTarget: 190, group: "rf0", rfCount };
+  }
+
+  function lipidBadge(group){
+    if (group === "highProfile") return `<span class="badge b-bad">High-risk profile</span>`;
+    if (group === "rf2") return `<span class="badge b-warn">≥2 risk factors</span>`;
+    if (group === "rf1") return `<span class="badge b-mid">1 risk factor</span>`;
+    if (group === "rf0") return `<span class="badge b-ok">0 risk factor</span>`;
+    return "";
+  }
+
+  // -----------------------------
+  // Wire UI
+  // -----------------------------
+  let lastTwcccc = null; // store last baseline calc
+
+  function autoTickLipidHelpers(){
+    // Auto-tick: LDL>=190
+    const ldl = Number(document.getElementById("ldl").value);
+    if (Number.isFinite(ldl) && ldl >= 190) document.getElementById("lipLDL190").checked = true;
+
+    // Auto-tick: old age by sex+age
+    const age = Number(document.getElementById("age").value);
+    const sex = document.getElementById("sex").value;
+    if (Number.isFinite(age)){
+      const isOld = (sex === "male" && age >= 45) || (sex === "female" && age >= 55);
+      document.getElementById("rfOldAge").checked = isOld;
+    }
+
+    // Auto-tick low HDL by sex-specific cutoffs for lipid targets
+    const hdl = Number(document.getElementById("hdl").value);
+    if (Number.isFinite(hdl)){
+      const isLow = (sex === "male" && hdl < 40) || (sex === "female" && hdl < 50);
+      document.getElementById("rfLowHDL").checked = isLow;
+    }
+  }
+
+  function calcTwcccc(){
+    const age = Number(document.getElementById("age").value);
+    const sex = document.getElementById("sex").value;
+    const bmi = Number(document.getElementById("bmi").value);
+    const sbp = Number(document.getElementById("sbp").value);
+    const ldl = Number(document.getElementById("ldl").value);
+    const hdl = Number(document.getElementById("hdl").value);
+
+    // basic validation
+    const missing = [];
+    if (!Number.isFinite(age)) missing.push("年齡");
+    if (!Number.isFinite(bmi)) missing.push("BMI");
+    if (!Number.isFinite(sbp)) missing.push("SBP");
+    if (!Number.isFinite(ldl)) missing.push("LDL-C");
+    if (!Number.isFinite(hdl)) missing.push("HDL-C");
+
+    if (missing.length){
+      alert("以下欄位未填或格式不正確：" + missing.join("、"));
+      return;
+    }
+
+    // Points
+    const pAge = agePoints(age);
+    const pSex = sexPoints(sex);
+    const pBmi = bmiPoints(bmi);
+    const pSbp = sbpPoints(sbp);
+    const pLdl = ldlPoints(ldl);
+    const pHdl = hdlPoints(hdl);
+
+    // Total points in Table 4 are 3..24, so we add +3 offset
+    let totalPts = 3 + pAge + pSex + pBmi + pSbp + pLdl + pHdl;
+    totalPts = clamp(totalPts, 3, 24);
+
+    const risk = RISK_BY_TOTAL_POINTS[totalPts];
+    const tier = riskTierFromTotalPoints(totalPts);
+
+    lastTwcccc = { age, sex, bmi, sbp, ldl, hdl, totalPts, risk, tier };
+
+    document.getElementById("ptsOut").textContent = String(totalPts);
+    document.getElementById("riskOut").textContent = toPercent(risk);
+    document.getElementById("tierBadgeWrap").innerHTML = badgeHTML(tier);
+    document.getElementById("explainOut").textContent =
+      `${tierNameZH(tier)}｜${explainTwcccc(tier)}` +
+      ((age < 35) ? "（注意：TwCCCC 表格主要用於 ≥35 歲族群；<35 歲僅供參考）" : "");
+
+    // Auto-helper for lipid module
+    autoTickLipidHelpers();
+
+    // Update CAC reclassify if CAC already filled
+    applyCAC();
+
+    // Optionally compute lipid targets immediately (not auto; user clicks)
+  }
+
+  function applyCAC(){
+    const tierAfter = document.getElementById("tierAfterCac");
+    if (!lastTwcccc){
+      tierAfter.value = "";
+      return;
+    }
+    const baseTier = lastTwcccc.tier;
+    const cacVal = document.getElementById("cac").value.trim();
+    if (!cacVal){
+      tierAfter.value = "";
+      return;
+    }
+    const cac = Number(cacVal);
+    if (!Number.isFinite(cac) || cac < 0){
+      tierAfter.value = "CAC 格式不正確";
+      return;
+    }
+
+    const newTier = reclassifyWithCAC(baseTier, cac);
+    tierAfter.value = tierNameZH(newTier);
+
+    // Append note to explainOut (without overwriting baseline explanation)
+    const extra = cacExtraNote(baseTier, cac);
+    const baseText = `${tierNameZH(baseTier)}｜${explainTwcccc(baseTier)}`;
+    const text = extra ? (baseText + " 另外：" + extra) : baseText;
+    document.getElementById("explainOut").textContent = text;
+  }
+
+  function calcLipidTargets(){
+    autoTickLipidHelpers();
+    const { ldlTarget, nonHdlTarget, group, rfCount } = getLDLTargets();
+
+    document.getElementById("ldlTargetOut").textContent = "< " + ldlTarget + " mg/dL";
+    document.getElementById("nonHdlTargetOut").textContent = "< " + nonHdlTarget + " mg/dL";
+    document.getElementById("lipidBadgeWrap").innerHTML = lipidBadge(group);
+
+    let msg = "";
+    if (group === "highProfile"){
+      msg = "有高風險 profile（DM / 非透析 CKD / LDL≥190）→ 建議立即降脂治療，LDL 目標 <100。";
+    }else{
+      msg = `無高風險 profile；selected risk factors = ${rfCount} → LDL 目標如上。`;
+    }
+    msg += " Statin 為第一線，可先中等強度，未達標再上調強度；若無法達標或不耐受，可考慮 ezetimibe（需臨床評估）。";
+    document.getElementById("lipidExplain").textContent = msg;
+  }
+
+  function resetAll(){
+    ["age","bmi","sbp","ldl","hdl","cac"].forEach(id => document.getElementById(id).value = "");
+    document.getElementById("sex").value = "male";
+    document.getElementById("ptsOut").textContent = "—";
+    document.getElementById("riskOut").textContent = "—";
+    document.getElementById("tierBadgeWrap").innerHTML = "";
+    document.getElementById("explainOut").textContent = "請先輸入資料並按「計算」。";
+    document.getElementById("tierAfterCac").value = "";
+    lastTwcccc = null;
+  }
+
+  function resetLipid(){
+    ["lipDM","lipCKD","lipLDL190","rfHTN","rfOldAge","rfFH","rfLowHDL","rfSmoke","rfMetS"]
+      .forEach(id => document.getElementById(id).checked = false);
+    document.getElementById("ldlTargetOut").textContent = "—";
+    document.getElementById("nonHdlTargetOut").textContent = "—";
+    document.getElementById("lipidBadgeWrap").innerHTML = "";
+    document.getElementById("lipidExplain").textContent = "按「計算 LDL 目標」後顯示建議。";
+  }
+
+  document.getElementById("btnCalc").addEventListener("click", calcTwcccc);
+  document.getElementById("btnReset").addEventListener("click", () => { resetAll(); resetLipid(); });
+
+  document.getElementById("cac").addEventListener("input", applyCAC);
+
+  document.getElementById("btnLipid").addEventListener("click", calcLipidTargets);
+  document.getElementById("btnLipidReset").addEventListener("click", resetLipid);
+</script>
+
+</body>
+</html>
 
